@@ -27,7 +27,7 @@ jobs:
           WPS_USER_ID: ${{ secrets.WPS_USER_ID }}
           WPS_SID: ${{ secrets.WPS_SID }}
         run: |
-          python 1.py
+          python wps.py
       
       - name: Upload alert log
         if: always()
