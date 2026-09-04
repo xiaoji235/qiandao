@@ -48,8 +48,8 @@ class SignInClient:
         self.headers = HEADERS.copy()
         # 确保 log 目录存在
         self._ensure_log_dir()
-        # 初始化时删除旧的 alert.txt
-        self._clear_alert_log()
+        # 初始化时删除旧的 wps.txt
+        self._clear_log()
     
     def _ensure_log_dir(self):
         """确保 log 目录存在"""
@@ -62,19 +62,19 @@ class SignInClient:
         except Exception as e:
             print(f"⚠️ 创建日志目录失败: {e}")
     
-    def _get_log_path(self, filename="alert.txt"):
+    def _get_log_path(self, filename="wps.txt"):
         """获取日志文件的完整路径"""
         script_dir = os.path.dirname(os.path.abspath(__file__))
         log_dir = os.path.join(script_dir, "log")
         return os.path.join(log_dir, filename)
     
-    def _clear_alert_log(self):
-        """删除已存在的 alert.txt 文件"""
+    def _clear_log(self):
+        """删除已存在的 wps.txt 文件"""
         try:
             log_file = self._get_log_path()
             if os.path.exists(log_file):
                 os.remove(log_file)
-                print(f"✓ 已删除旧的告警日志: {log_file}")
+                print(f"✓ 已删除旧的日志文件: {log_file}")
         except Exception as e:
             print(f"⚠️ 删除旧日志文件失败: {e}")
     
@@ -136,16 +136,19 @@ class SignInClient:
         except Exception as e:
             raise
     
-    def write_alert_log(self, msg, ext_msg=None):
-        """写入签到日志到 log/alert.txt"""
+    def write_log(self, msg, ext_msg=None):
+        """写入签到日志到 log/wps.txt"""
         try:
             log_file = self._get_log_path()
             
+            # 获取当前时间
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            
             # 构建日志内容
             if ext_msg:
-                log_content = f"签到状态：{msg}，原因：{ext_msg}\n"
+                log_content = f"[{timestamp}] 签到状态：{msg}，原因：{ext_msg}\n"
             else:
-                log_content = f"签到状态：{msg}\n"
+                log_content = f"[{timestamp}] 签到状态：{msg}\n"
             
             # 写入文件（覆盖模式）
             with open(log_file, 'w', encoding='utf-8') as f:
@@ -160,7 +163,9 @@ class SignInClient:
     def sign_in(self):
         """执行签到"""
         if not self.get_encrypt_key():
-            return {"status": "error", "msg": "获取RSA公钥失败"}
+            error_msg = "获取RSA公钥失败"
+            self.write_log(error_msg)
+            return {"status": "error", "msg": error_msg}
         
         aes_key = self.generate_aes_key()
         
@@ -196,13 +201,11 @@ class SignInClient:
             print(f"状态码: {status_code}")
             print(json.dumps(result, ensure_ascii=False, indent=2))
             
-            # 根据是否有 ext_msg 写入不同格式的日志
-            if "ext_msg" in result and ext_msg:
-                print(f"\n检测到 ext_msg: {ext_msg}")
-                self.write_alert_log(result_msg, ext_msg)
+            # 写入日志
+            if ext_msg:
+                self.write_log(result_msg, ext_msg)
             else:
-                # 没有 ext_msg，只写入 msg
-                self.write_alert_log(result_msg)
+                self.write_log(result_msg)
             
             return {
                 "status_code": status_code,
@@ -210,7 +213,9 @@ class SignInClient:
             }
                 
         except Exception as e:
-            return {"status": "error", "msg": str(e)}
+            error_msg = str(e)
+            self.write_log(f"签到异常: {error_msg}")
+            return {"status": "error", "msg": error_msg}
 
 
 def main():
