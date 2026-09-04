@@ -6,7 +6,7 @@ on:
   workflow_dispatch:      # 允许手动触发
 
 jobs:
-  signin:
+  sign-in:
     runs-on: ubuntu-latest
     
     steps:
@@ -22,16 +22,25 @@ jobs:
         run: |
           pip install requests pycryptodome
       
-      - name: Run sign-in script
+      - name: Run WPS sign-in
         env:
           WPS_USER_ID: ${{ secrets.WPS_USER_ID }}
           WPS_SID: ${{ secrets.WPS_SID }}
         run: |
           python wps.py
       
-      - name: Upload alert log
+      - name: Upload sign-in log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: signin-log
-          path: alert.txt
+          path: log/wps.txt  # 修改为 wps.txt
+      
+      - name: Commit and push log file
+        if: always()
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add log/wps.txt
+          git diff --staged --quiet || git commit -m "Update WPS sign-in log [skip ci]"
+          git push
