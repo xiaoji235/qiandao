@@ -1,0 +1,37 @@
+name: WPS Daily Sign-In
+
+on:
+  schedule:
+    - cron: '30 0 * * *'  # 每天 UTC 0:30 执行 (北京时间 8:30)
+  workflow_dispatch:      # 允许手动触发
+
+jobs:
+  signin:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests pycryptodome
+      
+      - name: Run sign-in script
+        env:
+          WPS_USER_ID: ${{ secrets.WPS_USER_ID }}
+          WPS_SID: ${{ secrets.WPS_SID }}
+        run: |
+          python 1.py
+      
+      - name: Upload alert log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signin-log
+          path: alert.txt
