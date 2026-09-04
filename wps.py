@@ -34,7 +34,7 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0",
     "Accept": "application/json, text/plain, */*",
     "Origin": "https://personal-act.wps.cn",
-    "Referer": "https://personal-act.wps.cn/rubik2/portal/HD2025031821201822/YM2025031821202008?cs_from=&position=pc_rwzx_wpssq",
+    "Referer": "https://personal-act.wps.cn/rubik2/portal/HD2025031821201822/YM2025031821202008?cs_from=&position=pc_rwzx_wpss",
     "Cookie": COOKIE_STR
 }
 # =================================================
@@ -46,14 +46,32 @@ class SignInClient:
         self.base_url = BASE_URL
         self.rsa_public_key = None
         self.headers = HEADERS.copy()
+        # 确保 log 目录存在
+        self._ensure_log_dir()
         # 初始化时删除旧的 alert.txt
         self._clear_alert_log()
+    
+    def _ensure_log_dir(self):
+        """确保 log 目录存在"""
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            log_dir = os.path.join(script_dir, "log")
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+                print(f"✓ 已创建日志目录: {log_dir}")
+        except Exception as e:
+            print(f"⚠️ 创建日志目录失败: {e}")
+    
+    def _get_log_path(self, filename="alert.txt"):
+        """获取日志文件的完整路径"""
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        log_dir = os.path.join(script_dir, "log")
+        return os.path.join(log_dir, filename)
     
     def _clear_alert_log(self):
         """删除已存在的 alert.txt 文件"""
         try:
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            log_file = os.path.join(script_dir, "alert.txt")
+            log_file = self._get_log_path()
             if os.path.exists(log_file):
                 os.remove(log_file)
                 print(f"✓ 已删除旧的告警日志: {log_file}")
@@ -119,11 +137,9 @@ class SignInClient:
             raise
     
     def write_alert_log(self, msg, ext_msg=None):
-        """写入签到日志到 alert.txt"""
+        """写入签到日志到 log/alert.txt"""
         try:
-            # 获取脚本所在目录
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            log_file = os.path.join(script_dir, "alert.txt")
+            log_file = self._get_log_path()
             
             # 构建日志内容
             if ext_msg:
