@@ -13,30 +13,52 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up Python
+      - name: 检查cookie是否失效
+        id: check_log
+        run: |
+          # 检查 log/wps.txt 是否存在且包含"失败"
+          if [ -f "log/wps.txt" ] && grep -q "失败" "log/wps.txt"; then
+            echo "检测到之前的签到日志包含'失败'，停止运行"
+            echo "has_failure=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_failure=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: cookie 失效，停止运行
+        if: steps.check_log.outputs.has_failure == 'true'
+        run: |
+          echo "由于上次签到失败，工作流已停止"
+          exit 1
+      
+      - name: 配置python环境
+        if: steps.check_log.outputs.has_failure == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       
-      - name: Install dependencies
+      - name: 安装依赖
+        if: steps.check_log.outputs.has_failure == 'false'
         run: |
           pip install requests pycryptodome
       
-      - name: Run WPS sign-in
+      - name: 运行签到脚本
+        if: steps.check_log.outputs.has_failure == 'false'
         env:
           WPS_USER_ID: ${{ secrets.WPS_USER_ID }}
           WPS_SID: ${{ secrets.WPS_SID }}
+          BARK_KEY: ${{ secrets.BARK_KEY }}
+          
         run: |
           python wps.py
       
-      - name: Upload sign-in log
+      - name: 写入日志
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: signin-log
-          path: log/wps.txt  # 日志wps.txt
+          path: log/wps.txt
       
-      - name: Commit and push log file
+      - name: 推送
         if: always()
         run: |
           git config --local user.name "github-actions[bot]"
