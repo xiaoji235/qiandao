@@ -13,12 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: 检查cookie是否失效
+      - name: 检查log判断是否存在“原因”二字，若存在则代表cookie可能失效
         id: check_log
         run: |
-          # 检查 log/wps.txt 是否存在且包含"失败"
-          if [ -f "log/wps.txt" ] && grep -q "失败" "log/wps.txt"; then
-            echo "检测到之前的签到日志包含'失败'，停止运行"
+          if [ -f "log/wps.txt" ] && grep -q "原因" "log/wps.txt"; then
+            echo "检测到之前的签到日志包含'原因'，停止运行"
             echo "has_failure=true" >> $GITHUB_OUTPUT
           else
             echo "has_failure=false" >> $GITHUB_OUTPUT
