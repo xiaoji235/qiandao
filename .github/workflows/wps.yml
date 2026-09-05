@@ -2,8 +2,8 @@ name: WPS Daily Sign-In
 
 on:
   schedule:
-    - cron: '30 0 * * *'  # 每天 UTC 0:30 执行 (北京时间 8:30)
-  workflow_dispatch:      # 允许手动触发
+    - cron: '15 0 * * *' 
+  workflow_dispatch:
 
 jobs:
   sign-in:
@@ -34,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: signin-log
-          path: log/wps.txt  # 修改为 wps.txt
+          path: log/wps.txt  # 日志wps.txt
       
       - name: Commit and push log file
         if: always()
